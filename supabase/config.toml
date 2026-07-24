@@ -1,0 +1,16 @@
+project_id = "attendance-management-system"
+
+[functions.employee-login]
+verify_jwt = false
+
+[functions.create-employee]
+verify_jwt = true
+
+[functions.update-employee]
+verify_jwt = true
+
+[functions.delete-employee]
+verify_jwt = true
+
+[functions.reset-employee-password]
+verify_jwt = true
