@@ -1,5 +1,5 @@
 import { FormEvent, useEffect, useMemo, useState } from 'react';
-import { Copy, KeyRound, Pencil, Plus, RefreshCw, Search, Trash2, UserRoundCheck, UserRoundX, UsersRound } from 'lucide-react';
+import { Copy, Pencil, Plus, RefreshCw, Search, Trash2, UserRoundCheck, UserRoundX, UsersRound } from 'lucide-react';
 import { Alert } from '../../components/ui/Alert';
 import { Badge } from '../../components/ui/Badge';
 import { Button } from '../../components/ui/Button';
@@ -9,7 +9,7 @@ import { Input } from '../../components/ui/Input';
 import { Modal } from '../../components/ui/Modal';
 import { Select } from '../../components/ui/Select';
 import { formatDate, generatePassword, getErrorMessage, nextEmployeeIdFromList, normalizeEmployeeCode, statusTone, todayISO } from '../../lib/utils';
-import { createEmployee, deleteEmployee, listEmployees, resetEmployeePassword, updateEmployee } from '../../services/employees';
+import { createEmployee, deleteEmployee, listEmployees, updateEmployee } from '../../services/employees';
 import type { Employee, EmployeeFormValues, EmployeeStatus, GeneratedCredentials } from '../../types';
 
 const defaultForm = (): EmployeeFormValues => ({
@@ -138,7 +138,7 @@ export function EmployeesPage() {
   }
 
   async function handleDelete(employee: Employee) {
-    const confirmed = window.confirm(`Delete ${employee.full_name}? This removes their login and attendance records.`);
+    const confirmed = window.confirm(`Delete ${employee.full_name}? This removes their app profile and attendance records. The Supabase Auth user may remain in Authentication > Users.`);
     if (!confirmed) return;
 
     setError('');
@@ -169,21 +169,6 @@ export function EmployeesPage() {
       await loadEmployees();
     } catch (caughtError) {
       setError(getErrorMessage(caughtError, 'Unable to update employee status.'));
-    }
-  }
-
-  async function handleResetPassword(employee: Employee) {
-    const confirmed = window.confirm(`Generate a new password for ${employee.full_name}? Their old password will stop working.`);
-    if (!confirmed) return;
-
-    setError('');
-    setSuccess('');
-    try {
-      const credentials = await resetEmployeePassword(employee.id);
-      setGeneratedCredentials(credentials);
-      setSuccess('New password generated. Share it securely with the employee.');
-    } catch (caughtError) {
-      setError(getErrorMessage(caughtError, 'Unable to reset password.'));
     }
   }
 
@@ -281,7 +266,6 @@ export function EmployeesPage() {
                       <td className="py-4">
                         <div className="flex justify-end gap-2">
                           <Button size="sm" variant="outline" leftIcon={<Pencil className="h-4 w-4" />} onClick={() => openEditModal(employee)}>Edit</Button>
-                          <Button size="sm" variant="outline" leftIcon={<KeyRound className="h-4 w-4" />} onClick={() => handleResetPassword(employee)}>Reset</Button>
                           <Button
                             size="sm"
                             variant="outline"
@@ -342,7 +326,7 @@ export function EmployeesPage() {
             />
           </div>
           <Alert tone="info">
-            Employee credentials are company generated. There is no employee signup page or employee password reset flow.
+            Employee credentials are created by the admin from this form using Supabase Auth signup. There is still no public signup page in the app.
           </Alert>
           <div className="flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
             <Button type="button" variant="secondary" onClick={() => setModalOpen(false)}>Cancel</Button>

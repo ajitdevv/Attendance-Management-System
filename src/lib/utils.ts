@@ -72,3 +72,7 @@ export function statusTone(status: EmployeeStatus | AttendanceStatus): 'green' |
 export function normalizeEmployeeCode(value: string): string {
   return value.trim().toUpperCase();
 }
+
+export function employeeAuthEmail(username: string): string {
+  return `${normalizeEmployeeCode(username).toLowerCase()}@employees.ams.local`;
+}
