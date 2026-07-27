@@ -67,14 +67,14 @@ export function AdminDashboard() {
           <h2 className="mt-2 text-3xl font-extrabold text-slate-950">Company attendance overview</h2>
           <p className="mt-2 text-slate-500">Track today's attendance, active employees, and recent activity.</p>
         </div>
-        <Badge tone="blue">{formatDate(todayISO())}</Badge>
+        <Badge tone="amber">{formatDate(todayISO())}</Badge>
       </div>
 
       {error ? <Alert tone="error">{error}</Alert> : null}
 
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-        <StatCard title="Total employees" value={summary.total_employees} helper="Active employee profiles" icon={Users} tone="bg-blue-50 text-blue-700" />
-        <StatCard title="Today's records" value={summary.today_attendance} helper="Employees checked in" icon={CalendarDays} tone="bg-violet-50 text-violet-700" />
+        <StatCard title="Total employees" value={summary.total_employees} helper="Active employee profiles" icon={Users} tone="bg-red-50 text-red-700" />
+        <StatCard title="Today's records" value={summary.today_attendance} helper="Employees checked in" icon={CalendarDays} tone="bg-rose-50 text-rose-700" />
         <StatCard title="Present" value={summary.present_employees} helper="Marked present today" icon={UserCheck} tone="bg-emerald-50 text-emerald-700" />
         <StatCard title="Absent" value={summary.absent_employees} helper="No check-in yet" icon={UserRoundX} tone="bg-red-50 text-red-700" />
       </div>

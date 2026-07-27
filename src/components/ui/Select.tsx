@@ -16,7 +16,7 @@ export function Select({ label, error, options, id, className, children, ...prop
       <select
         id={selectId}
         className={cn(
-          'h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-900 outline-none transition focus:border-slate-400 focus:ring-4 focus:ring-slate-100 disabled:cursor-not-allowed disabled:bg-slate-100',
+          'h-11 w-full rounded-xl border border-red-100 bg-white px-3 text-sm text-slate-900 outline-none transition focus:border-red-300 focus:ring-4 focus:ring-red-100 disabled:cursor-not-allowed disabled:bg-red-50',
           error && 'border-red-300 focus:border-red-400 focus:ring-red-100',
           className
         )}
