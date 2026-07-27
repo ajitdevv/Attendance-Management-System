@@ -1,5 +1,5 @@
 import { FormEvent, useEffect, useMemo, useState } from 'react';
-import { Copy, Pencil, Plus, RefreshCw, Search, Trash2, UserRoundCheck, UserRoundX, UsersRound } from 'lucide-react';
+import { CheckCircle2, Copy, Pencil, Plus, RefreshCw, Search, Trash2, UserRoundCheck, UserRoundX, UsersRound } from 'lucide-react';
 import { Alert } from '../../components/ui/Alert';
 import { Badge } from '../../components/ui/Badge';
 import { Button } from '../../components/ui/Button';
@@ -8,7 +8,7 @@ import { EmptyState } from '../../components/ui/EmptyState';
 import { Input } from '../../components/ui/Input';
 import { Modal } from '../../components/ui/Modal';
 import { Select } from '../../components/ui/Select';
-import { formatDate, generatePassword, getErrorMessage, nextEmployeeIdFromList, normalizeEmployeeCode, statusTone, todayISO } from '../../lib/utils';
+import { formatDate, generatePassword, getErrorMessage, nextEmployeeIdFromList, statusTone, todayISO } from '../../lib/utils';
 import { createEmployee, deleteEmployee, listEmployees, updateEmployee } from '../../services/employees';
 import type { Employee, EmployeeFormValues, EmployeeStatus, GeneratedCredentials } from '../../types';
 
@@ -17,6 +17,7 @@ const defaultForm = (): EmployeeFormValues => ({
   employeeId: '',
   username: '',
   password: '',
+  email: '',
   phone: '',
   department: '',
   joiningDate: todayISO(),
@@ -57,7 +58,7 @@ export function EmployeesPage() {
     if (!term) return employees;
 
     return employees.filter((employee) =>
-      [employee.full_name, employee.employee_id, employee.department, employee.phone || '', employee.users?.username || '']
+      [employee.full_name, employee.employee_id, employee.email, employee.department, employee.phone || '', employee.users?.username || '']
         .join(' ')
         .toLowerCase()
         .includes(term)
@@ -85,6 +86,7 @@ export function EmployeesPage() {
       employeeId: employee.employee_id,
       username: employee.users?.username || employee.employee_id,
       password: '',
+      email: employee.email,
       phone: employee.phone || '',
       department: employee.department,
       joiningDate: employee.joining_date,
@@ -96,13 +98,7 @@ export function EmployeesPage() {
   }
 
   function updateField<K extends keyof EmployeeFormValues>(key: K, value: EmployeeFormValues[K]) {
-    setForm((current) => {
-      if (key === 'employeeId' && !editingEmployee) {
-        const normalized = normalizeEmployeeCode(String(value));
-        return { ...current, employeeId: normalized, username: normalized };
-      }
-      return { ...current, [key]: value };
-    });
+    setForm((current) => ({ ...current, [key]: value }));
   }
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
@@ -115,7 +111,7 @@ export function EmployeesPage() {
       if (editingEmployee) {
         await updateEmployee(editingEmployee.id, {
           fullName: form.fullName,
-          employeeId: form.employeeId,
+          email: form.email,
           phone: form.phone,
           department: form.department,
           joiningDate: form.joiningDate,
@@ -161,6 +157,7 @@ export function EmployeesPage() {
         status: nextStatus,
         fullName: employee.full_name,
         employeeId: employee.employee_id,
+        email: employee.email,
         phone: employee.phone || '',
         department: employee.department,
         joiningDate: employee.joining_date
@@ -237,10 +234,11 @@ export function EmployeesPage() {
             </div>
           ) : filteredEmployees.length ? (
             <div className="overflow-x-auto">
-              <table className="w-full min-w-[900px] text-left text-sm">
+              <table className="w-full min-w-[980px] text-left text-sm">
                 <thead className="text-xs uppercase tracking-wide text-slate-400">
                   <tr>
                     <th className="pb-3 font-bold">Employee</th>
+                    <th className="pb-3 font-bold">Email</th>
                     <th className="pb-3 font-bold">Username</th>
                     <th className="pb-3 font-bold">Phone</th>
                     <th className="pb-3 font-bold">Department</th>
@@ -256,6 +254,7 @@ export function EmployeesPage() {
                         <p className="font-bold text-slate-950">{employee.full_name}</p>
                         <p className="text-xs text-slate-500">{employee.employee_id}</p>
                       </td>
+                      <td className="py-4 text-slate-600">{employee.email}</td>
                       <td className="py-4 font-semibold text-slate-700">{employee.users?.username || employee.employee_id}</td>
                       <td className="py-4 text-slate-600">{employee.phone || '—'}</td>
                       <td className="py-4 text-slate-600">{employee.department}</td>
@@ -302,8 +301,20 @@ export function EmployeesPage() {
         <form className="space-y-5" onSubmit={handleSubmit}>
           <div className="grid gap-4 sm:grid-cols-2">
             <Input label="Full name" value={form.fullName} onChange={(event) => updateField('fullName', event.target.value)} required minLength={2} />
-            <Input label="Employee ID" value={form.employeeId} onChange={(event) => updateField('employeeId', event.target.value)} required pattern="EMP[0-9]{3,}" />
-            <Input label="Username" value={form.username} disabled={Boolean(editingEmployee)} onChange={(event) => updateField('username', event.target.value.toUpperCase())} required />
+            <Input label="Email address" type="email" value={form.email} onChange={(event) => updateField('email', event.target.value)} required placeholder="employee@gmail.com" />
+            <div className="rounded-2xl border border-blue-200 bg-blue-50 p-4 sm:col-span-2">
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                <div>
+                  <p className="text-sm font-semibold text-blue-700">Auto Employee ID</p>
+                  <p className="mt-1 text-2xl font-extrabold tracking-wide text-blue-950">{form.employeeId}</p>
+                  <p className="mt-1 text-xs text-blue-700">Generated automatically in sequence and locked to avoid admin confusion.</p>
+                </div>
+                <div className="inline-flex items-center gap-2 rounded-full bg-white px-3 py-2 text-sm font-bold text-blue-700 shadow-sm ring-1 ring-blue-200">
+                  <CheckCircle2 className="h-4 w-4" aria-hidden="true" />
+                  Verified sequence
+                </div>
+              </div>
+            </div>
             {!editingEmployee ? (
               <div className="flex gap-2">
                 <Input label="Generated password" value={form.password} onChange={(event) => updateField('password', event.target.value)} required minLength={10} />

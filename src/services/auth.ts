@@ -1,6 +1,6 @@
 import type { Session } from '@supabase/supabase-js';
 import { supabase } from '../lib/supabase';
-import { employeeAuthEmail } from '../lib/utils';
+import { normalizeEmployeeCode } from '../lib/utils';
 import type { AppUserProfile } from '../types';
 
 export async function getCurrentProfile(): Promise<AppUserProfile | null> {
@@ -38,8 +38,16 @@ export async function signInEmployee(
   username: string,
   password: string
 ): Promise<{ session: Session; profile: AppUserProfile }> {
+  const normalizedUsername = normalizeEmployeeCode(username);
+  const { data: employeeEmail, error: lookupError } = await supabase.rpc('employee_login_email', {
+    input_username: normalizedUsername
+  });
+
+  if (lookupError) throw lookupError;
+  if (!employeeEmail) throw new Error('Invalid employee username or inactive account.');
+
   const { data, error } = await supabase.auth.signInWithPassword({
-    email: employeeAuthEmail(username),
+    email: employeeEmail,
     password
   });
 

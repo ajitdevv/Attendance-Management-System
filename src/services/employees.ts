@@ -1,5 +1,5 @@
 import { signupClient, supabase } from '../lib/supabase';
-import { employeeAuthEmail, normalizeEmployeeCode } from '../lib/utils';
+import { normalizeEmployeeCode } from '../lib/utils';
 import type { Employee, EmployeeFormValues, GeneratedCredentials } from '../types';
 
 async function requireAdminProfile(): Promise<void> {
@@ -23,7 +23,7 @@ async function requireAdminProfile(): Promise<void> {
 export async function listEmployees(): Promise<Employee[]> {
   const { data, error } = await supabase
     .from('employees')
-    .select('id, user_id, employee_id, full_name, phone, department, joining_date, status, created_at, updated_at, users(username)')
+    .select('id, user_id, employee_id, full_name, email, phone, department, joining_date, status, created_at, updated_at, users(username)')
     .order('created_at', { ascending: false });
 
   if (error) throw error;
@@ -39,12 +39,17 @@ export async function createEmployee(values: EmployeeFormValues): Promise<{
 }> {
   await requireAdminProfile();
 
-  const username = normalizeEmployeeCode(values.username || values.employeeId);
-  const employeeId = normalizeEmployeeCode(values.employeeId || username);
+  const employeeId = normalizeEmployeeCode(values.employeeId);
+  const username = employeeId;
+  const email = values.email.trim().toLowerCase();
   const password = values.password.trim();
 
   if (!/^EMP\d{3,}$/.test(username) || !/^EMP\d{3,}$/.test(employeeId)) {
     throw new Error('Employee ID and username must use the format EMP001.');
+  }
+
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+    throw new Error('A valid employee email address is required.');
   }
 
   if (password.length < 10) {
@@ -67,12 +72,21 @@ export async function createEmployee(values: EmployeeFormValues): Promise<{
 
   if (existingEmployee) throw new Error('This employee ID already exists.');
 
+  const { data: existingEmail } = await supabase
+    .from('employees')
+    .select('id')
+    .eq('email', email)
+    .maybeSingle();
+
+  if (existingEmail) throw new Error('This employee email already exists.');
+
   const { data: signupData, error: signupError } = await signupClient.auth.signUp({
-    email: employeeAuthEmail(username),
+    email,
     password,
     options: {
       data: {
         username,
+        employee_id: employeeId,
         role: 'employee'
       }
     }
@@ -101,12 +115,13 @@ export async function createEmployee(values: EmployeeFormValues): Promise<{
         user_id: authUserId,
         employee_id: employeeId,
         full_name: values.fullName.trim(),
+        email,
         phone: values.phone.trim() || null,
         department: values.department.trim(),
         joining_date: values.joiningDate,
         status: values.status
       })
-      .select('id, user_id, employee_id, full_name, phone, department, joining_date, status, created_at, updated_at')
+      .select('id, user_id, employee_id, full_name, email, phone, department, joining_date, status, created_at, updated_at')
       .single();
 
     if (employeeError || !employee) throw employeeError || new Error('Unable to create employee profile.');
@@ -138,13 +153,14 @@ export async function updateEmployee(
     .update({
       employee_id: values.employeeId ? normalizeEmployeeCode(values.employeeId) : undefined,
       full_name: values.fullName?.trim(),
+      email: values.email?.trim().toLowerCase(),
       phone: values.phone?.trim() || null,
       department: values.department?.trim(),
       joining_date: values.joiningDate,
       status: values.status
     })
     .eq('id', id)
-    .select('id, user_id, employee_id, full_name, phone, department, joining_date, status, created_at, updated_at, users(username)')
+    .select('id, user_id, employee_id, full_name, email, phone, department, joining_date, status, created_at, updated_at, users(username)')
     .single();
 
   if (error || !data) throw error || new Error('Employee not found.');

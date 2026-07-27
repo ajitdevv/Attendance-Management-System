@@ -14,6 +14,7 @@ export type Employee = {
   user_id: string;
   employee_id: string;
   full_name: string;
+  email: string;
   phone: string | null;
   department: string;
   joining_date: string;
@@ -30,6 +31,7 @@ export type EmployeeFormValues = {
   employeeId: string;
   username: string;
   password: string;
+  email: string;
   phone: string;
   department: string;
   joiningDate: string;

@@ -36,7 +36,7 @@ export async function listAdminAttendanceRows(date = todayISO()): Promise<AdminA
   const [{ data: employees, error: employeeError }, { data: attendance, error: attendanceError }] = await Promise.all([
     supabase
       .from('employees')
-      .select('id, user_id, employee_id, full_name, phone, department, joining_date, status, created_at, updated_at')
+      .select('id, user_id, employee_id, full_name, email, phone, department, joining_date, status, created_at, updated_at')
       .order('full_name', { ascending: true }),
     supabase
       .from('attendance')
@@ -75,7 +75,7 @@ export async function getMyEmployeeProfile(): Promise<Employee | null> {
 
   const { data, error } = await supabase
     .from('employees')
-    .select('id, user_id, employee_id, full_name, phone, department, joining_date, status, created_at, updated_at')
+    .select('id, user_id, employee_id, full_name, email, phone, department, joining_date, status, created_at, updated_at')
     .eq('user_id', user.id)
     .single();
 

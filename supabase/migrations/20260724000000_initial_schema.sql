@@ -26,6 +26,7 @@ create table public.employees (
   user_id uuid not null unique references public.users(id) on delete cascade,
   employee_id text not null unique,
   full_name text not null,
+  email text not null unique,
   phone text,
   department text not null,
   joining_date date not null,
@@ -33,6 +34,7 @@ create table public.employees (
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now(),
   constraint employees_employee_id_format check (employee_id ~ '^EMP[0-9]{3,}$'),
+  constraint employees_email_format check (email ~* '^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$'),
   constraint employees_full_name_not_blank check (length(trim(full_name)) >= 2),
   constraint employees_department_not_blank check (length(trim(department)) >= 2)
 );
@@ -51,6 +53,7 @@ create table public.attendance (
 );
 
 create index employees_user_id_idx on public.employees(user_id);
+create index employees_email_idx on public.employees(email);
 create index employees_status_idx on public.employees(status);
 create index employees_department_idx on public.employees(department);
 create index attendance_employee_id_idx on public.attendance(employee_id);
@@ -112,6 +115,22 @@ security definer
 set search_path = public
 as $$
   select extensions.crypt(plain_password, extensions.gen_salt('bf'::text, 10));
+$$;
+
+create or replace function public.employee_login_email(input_username text)
+returns text
+language sql
+stable
+security definer
+set search_path = public
+as $$
+  select e.email
+  from public.users u
+  join public.employees e on e.user_id = u.id
+  where u.username = input_username::citext
+    and u.role = 'employee'
+    and e.status = 'active'
+  limit 1;
 $$;
 
 create or replace function public.verify_employee_login(input_username text, plain_password text)
@@ -330,9 +349,11 @@ grant select, insert, update, delete on public.employees to service_role;
 grant select, insert, update, delete on public.attendance to service_role;
 
 revoke all on function public.hash_employee_password(text) from public, anon, authenticated;
+revoke all on function public.employee_login_email(text) from public, anon, authenticated;
 revoke all on function public.verify_employee_login(text, text) from public, anon, authenticated;
 revoke all on function public.next_employee_code() from public, anon, authenticated;
 grant execute on function public.hash_employee_password(text) to service_role;
+grant execute on function public.employee_login_email(text) to anon, authenticated;
 grant execute on function public.verify_employee_login(text, text) to service_role;
 grant execute on function public.next_employee_code() to service_role;
 grant execute on function public.check_in_today() to authenticated;
